@@ -118,7 +118,26 @@ model.transformer.prefix_encoder.load_state_dict(new_prefix_state_dict)
 ```
 注意你可能需要将 `pre_seq_len` 改成你训练时的实际值。如果你是[从本地加载模型](../README.md#从本地加载模型)的话，需要将 `THUDM/chatglm2-6b` 改成本地的模型路径（注意不是checkpoint路径）。
 
-2. 如果需要加载的是全参数微调的 checkpoint，则直接加载整个 checkpoint：
+2. 如果需要加载 LoRA 的 checkpoint：
+
+```
+model = AutoModel.from_pretrained("THUDM/chatglm2-6b", trust_remote_code=True)
+peft_config = LoraConfig(
+    task_type=TaskType.CAUSAL_LM,
+    inference_mode=False,
+    r=8,
+    lora_alpha=32,
+    lora_dropout=0.1,
+    target_modules=["query_key_value"]
+)
+model = get_peft_model(model, peft_config)
+adapter_state_dict = torch.load(os.path.join(CHECKPOINT_PATH, "adapter_model.bin"))
+model.load_state_dict(adapter_state_dict, strict=False)
+```
+
+LoraConfig 中的參数 `r` 需要使用训练时指定的秩。
+
+3. 如果需要加载的是全参数微调的 checkpoint，则直接加载整个 checkpoint：
 
 ```python
 model = AutoModel.from_pretrained(CHECKPOINT_PATH, trust_remote_code=True)
