@@ -36,6 +36,16 @@ bash train.sh
 
 如果你想要[从本地加载模型](../README.md#从本地加载模型)，可以将 `train.sh` 中的 `THUDM/chatglm2-6b` 改为你本地的模型路径。
 
+#### Lora
+
+运行以下指令进行训练：
+
+```shell
+bash train_lora.sh
+```
+
+其中，参数`lora_rank` 为 LoRA 论文中的秩。
+
 #### Finetune
 
 如果需要进行全参数的 Finetune，需要安装 [Deepspeed](https://github.com/microsoft/DeepSpeed)，然后运行以下指令：
@@ -53,7 +63,14 @@ bash ds_train_finetune.sh
 --ptuning_checkpoint $CHECKPOINT_PATH
 ```
 
-如果是，只需要跟之前一样设定 `model_name_or_path`：
+如果是使用 LoRA 训练模型，也需要额外加载 LoRA 模块的参数，可以参考 `evaluate_lora.sh`：
+
+```shell
+--model_name_or_path THUDM/chatglm2-6b
+--lora_checkpoint $CHECKPOINT_PATH
+```
+
+如果是 Finetune，只需要跟之前一样设定 `model_name_or_path`：
 
 ```shell
 --model_name_or_path $CHECKPOINT_PATH
@@ -155,7 +172,16 @@ bash train_chat.sh
   pages={61--68},
   year={2022}
 }
+@inproceedings{
+  hu2022lora,
+  title={Lo{RA}: Low-Rank Adaptation of Large Language Models},
+  author={Edward J Hu and Yelong Shen and Phillip Wallis and Zeyuan Allen-Zhu and Yuanzhi Li and Shean Wang and Lu Wang and Weizhu Chen},
+  booktitle={International Conference on Learning Representations},
+  year={2022},
+  url={https://openreview.net/forum?id=nZeVKeeFYf9}
+}
 ```
+
 
 
 

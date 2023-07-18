@@ -18,4 +18,4 @@ torchrun --standalone --nnodes=1 --nproc-per-node=$NUM_GPUS main.py \
     --max_target_length 64 \
     --per_device_eval_batch_size 1 \
     --predict_with_generate \
-    --lora
+    --lora --lora_rank 8
