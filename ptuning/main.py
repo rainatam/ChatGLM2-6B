@@ -42,6 +42,8 @@ from transformers import (
 )
 from trainer_seq2seq import Seq2SeqTrainer
 
+from peft import get_peft_model, LoraConfig, TaskType
+
 from arguments import ModelArguments, DataTrainingArguments
 
 logger = logging.getLogger(__name__)
@@ -108,25 +110,42 @@ def main():
     config.prefix_projection = model_args.prefix_projection
 
     tokenizer = AutoTokenizer.from_pretrained(model_args.model_name_or_path, trust_remote_code=True)
+    model = AutoModel.from_pretrained(model_args.model_name_or_path, config=config, trust_remote_code=True)
+    
+    if model_args.lora:
+        # LoRA
+        peft_config = LoraConfig(
+            task_type=TaskType.CAUSAL_LM,
+            inference_mode=False,
+            r=model_args.lora_rank,
+            lora_alpha=32,
+            lora_dropout=0.1,
+            target_modules=["query_key_value"]
+        )
+        model = model.float()
+        model = get_peft_model(model, peft_config)
 
-    if model_args.ptuning_checkpoint is not None:
-        # Evaluation
-        # Loading extra state dict of prefix encoder
-        model = AutoModel.from_pretrained(model_args.model_name_or_path, config=config, trust_remote_code=True)
-        prefix_state_dict = torch.load(os.path.join(model_args.ptuning_checkpoint, "pytorch_model.bin"))
-        new_prefix_state_dict = {}
-        for k, v in prefix_state_dict.items():
-            if k.startswith("transformer.prefix_encoder."):
-                new_prefix_state_dict[k[len("transformer.prefix_encoder."):]] = v
-        model.transformer.prefix_encoder.load_state_dict(new_prefix_state_dict)
-    else:
-        model = AutoModel.from_pretrained(model_args.model_name_or_path, config=config, trust_remote_code=True)
-
-    if model_args.quantization_bit is not None:
-        print(f"Quantized to {model_args.quantization_bit} bit")
-        model = model.quantize(model_args.quantization_bit)
-    if model_args.pre_seq_len is not None:
+        if model_args.lora_checkpoint is not None:
+            # Evaluation
+            adapter_state_dict = torch.load(os.path.join(model_args.lora_checkpoint, "adapter_model.bin"))
+            model.load_state_dict(adapter_state_dict, strict=False)
+            
+    elif model_args.pre_seq_len is not None:
         # P-tuning v2
+        if model_args.ptuning_checkpoint is not None:
+            # Evaluation
+            # Loading extra state dict of prefix encoder
+            prefix_state_dict = torch.load(os.path.join(model_args.ptuning_checkpoint, "pytorch_model.bin"))
+            new_prefix_state_dict = {}
+            for k, v in prefix_state_dict.items():
+                if k.startswith("transformer.prefix_encoder."):
+                    new_prefix_state_dict[k[len("transformer.prefix_encoder."):]] = v
+            model.transformer.prefix_encoder.load_state_dict(new_prefix_state_dict)
+        
+        if model_args.quantization_bit is not None:
+            print(f"Quantized to {model_args.quantization_bit} bit")
+            model = model.quantize(model_args.quantization_bit)
+
         model = model.half()
         model.transformer.prefix_encoder.float()
     else:

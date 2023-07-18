@@ -14,6 +14,9 @@ class ModelArguments:
     ptuning_checkpoint: str = field(
         default=None, metadata={"help": "Path to p-tuning v2 checkpoints"}
     )
+    lora_checkpoint: str = field(
+        default=None, metadata={"help": "Path to p-tuning v2 checkpoints"}
+    )
     config_name: Optional[str] = field(
         default=None, metadata={"help": "Pretrained config name or path if not the same as model_name"}
     )
@@ -58,6 +61,12 @@ class ModelArguments:
     )
     prefix_projection: bool = field(
         default=False
+    )
+    lora: bool = field(
+        default=False
+    )
+    lora_rank: Optional[int] = field(
+        default=8
     )
 
 
