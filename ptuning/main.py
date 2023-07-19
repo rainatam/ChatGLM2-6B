@@ -114,6 +114,12 @@ def main():
     
     if model_args.lora:
         # LoRA
+        if model_args.quantization_bit is not None:
+            print(f"Quantized to {model_args.quantization_bit} bit")
+            from quantization import quantize_except_qkv
+            model.quantized = True
+            quantize_except_qkv(model.transformer.encoder, model_args.quantization_bit)
+        
         peft_config = LoraConfig(
             task_type=TaskType.CAUSAL_LM,
             inference_mode=False,
@@ -122,7 +128,6 @@ def main():
             lora_dropout=0.1,
             target_modules=["query_key_value"]
         )
-        model = model.float()
         model = get_peft_model(model, peft_config)
 
         if model_args.lora_checkpoint is not None:

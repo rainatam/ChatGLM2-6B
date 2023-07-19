@@ -23,5 +23,6 @@ torchrun --standalone --nnodes=1 --nproc-per-node=$NUM_GPUS main.py \
     --save_steps 1000 \
     --learning_rate $LR \
     --ddp_find_unused_parameters False \
-    --lora --lora_rank 8
+    --lora --lora_rank 8 \
+    --quantization_bit 4
 
